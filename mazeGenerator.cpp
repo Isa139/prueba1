@@ -1,14 +1,16 @@
 #include "MazeGenerator.h"
-#include <iostream>
-#include <random>
-#include <ctime>
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
+#include <stdexcept>
 
-// Constructor - matriz de nodos
 MazeGenerator::MazeGenerator(int rows, int cols) : rows(rows), cols(cols) {
-    maze = new Node*[rows];
+    maze = new Cell*[rows];
     for (int i = 0; i < rows; ++i) {
-        maze[i] = new Node[cols];
+        maze[i] = new Cell[cols];
+        for (int j = 0; j < cols; ++j) {
+            maze[i][j] = Cell(j, i); // Asigna las coordenadas correctas
+        }
     }
     createMaze();
 }
@@ -20,105 +22,76 @@ MazeGenerator::~MazeGenerator() {
     delete[] maze;
 }
 
-Node* MazeGenerator::getNode(int row, int col) const {
+Cell* MazeGenerator::getNode(int row, int col) const {
     if (row >= 0 && row < rows && col >= 0 && col < cols) {
         return &maze[row][col];
     }
     return nullptr;
 }
 
-// inicializar la matriz con paredes
 void MazeGenerator::createMaze() {
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            maze[i][j].setUp(nullptr);
-            maze[i][j].setDown(nullptr);
-            maze[i][j].setLeft(nullptr);
-            maze[i][j].setRight(nullptr);
-            maze[i][j].visited = false;
+            if (i > 0) maze[i][j].up = &maze[i - 1][j];
+            if (i < rows - 1) maze[i][j].down = &maze[i + 1][j];
+            if (j > 0) maze[i][j].left = &maze[i][j - 1];
+            if (j < cols - 1) maze[i][j].right = &maze[i][j + 1];
         }
     }
 
-#ifdef USE_DFS
-    generateMazeDFS(0, 0);
-#elif defined(USE_BFS)
-    generateMazeBFS(0, 0);
-#endif
+    generateMazeDFS();
 }
 
-// DFS
-void MazeGenerator::generateMazeDFS(int x, int y) {
-    maze[x][y].visited = true;
+void MazeGenerator::generateMazeDFS() {
+    std::stack<Cell*> stack;
+    Cell* startCell = &maze[0][0];
+    startCell->visit();
+    stack.push(startCell);
 
-    std::vector<std::pair<int, int>> directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    std::srand(std::time(nullptr));
 
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(directions.begin(), directions.end(), g);
+    while (!stack.empty()) {
+        Cell* current = stack.top();
+        stack.pop();
 
-    for (auto& dir : directions) {
-        int nx = x + dir.first;
-        int ny = y + dir.second;
+        std::vector<int> directions = {0, 1, 2, 3};
+        std::random_shuffle(directions.begin(), directions.end());
 
-        if (nx >= 0 && ny >= 0 && nx < rows && ny < cols && !maze[nx][ny].visited) {
-            if (dir == std::make_pair(-1, 0)) {
-                maze[x][y].up = &maze[nx][ny];
-                maze[nx][ny].down = &maze[x][y];
-            } else if (dir == std::make_pair(1, 0)) {
-                maze[x][y].down = &maze[nx][ny];
-                maze[nx][ny].up = &maze[x][y];
-            } else if (dir == std::make_pair(0, -1)) {
-                maze[x][y].left = &maze[nx][ny];
-                maze[nx][ny].right = &maze[x][y];
-            } else if (dir == std::make_pair(0, 1)) {
-                maze[x][y].right = &maze[nx][ny];
-                maze[nx][ny].left = &maze[x][y];
+        for (int direction : directions) {
+            Cell* next = getNeighbor(current, direction);
+            if (next && !next->isVisited()) {
+                next->visit();
+                removeWalls(current, next);
+                stack.push(current);
+                stack.push(next);
+                break;
             }
-
-            generateMazeDFS(nx, ny);
         }
     }
 }
 
-// BFS
-void MazeGenerator::generateMazeBFS(int x, int y) {
-    std::queue<std::pair<int, int>> queue;
-    queue.push({x, y});
-    maze[x][y].visited = true;
+void MazeGenerator::removeWalls(Cell* current, Cell* next) {
+    if (current->up == next) {
+        current->removeWall(0);
+        next->removeWall(2);
+    } else if (current->down == next) {
+        current->removeWall(2);
+        next->removeWall(0);
+    } else if (current->left == next) {
+        current->removeWall(3);
+        next->removeWall(1);
+    } else if (current->right == next) {
+        current->removeWall(1);
+        next->removeWall(3);
+    }
+}
 
-    std::vector<std::pair<int, int>> directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-    std::random_device rd;
-    std::mt19937 g(rd());
-
-    while (!queue.empty()) {
-        auto [cx, cy] = queue.front();
-        queue.pop();
-
-        std::shuffle(directions.begin(), directions.end(), g);
-
-        for (auto& dir : directions) {
-            int nx = cx + dir.first;
-            int ny = cy + dir.second;
-
-            if (nx >= 0 && ny >= 0 && nx < rows && ny < cols && !maze[nx][ny].visited) {
-
-                if (dir == std::make_pair(-1, 0)) { // Arriba
-                    maze[cx][cy].setUp(&maze[nx][ny]);
-                    maze[nx][ny].setDown(&maze[cx][cy]);
-                } else if (dir == std::make_pair(1, 0)) { // Abajo
-                    maze[cx][cy].setDown(&maze[nx][ny]);
-                    maze[nx][ny].setUp(&maze[cx][cy]);
-                } else if (dir == std::make_pair(0, -1)) { // Izquierda
-                    maze[cx][cy].setLeft(&maze[nx][ny]);
-                    maze[nx][ny].setRight(&maze[cx][cy]);
-                } else if (dir == std::make_pair(0, 1)) { // Derecha
-                    maze[cx][cy].setRight(&maze[nx][ny]);
-                    maze[nx][ny].setLeft(&maze[cx][cy]);
-                }
-
-                maze[nx][ny].visited = true;
-                queue.push({nx, ny});
-            }
-        }
+Cell* MazeGenerator::getNeighbor(Cell* cell, int direction) const {
+    switch (direction) {
+    case 0: return cell->up;
+    case 1: return cell->right;
+    case 2: return cell->down;
+    case 3: return cell->left;
+    default: return nullptr;
     }
 }

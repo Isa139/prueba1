@@ -2,7 +2,6 @@
 
 Node::Node() : up(nullptr), down(nullptr), left(nullptr), right(nullptr), visited(false) {}
 
-// conexiones con otros nodos
 void Node::setUp(Node* node) {
     up = node;
 }
