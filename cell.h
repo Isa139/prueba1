@@ -10,6 +10,9 @@ public:
     void visit();
     bool isVisited() const;
 
+    void placeTreasure();
+    bool hasTreasure() const;
+
     Cell* up;
     Cell* down;
     Cell* left;
@@ -22,6 +25,7 @@ private:
     int x, y;
     bool visited;
     bool walls[4]; // Top, Right, Bottom, Left
+    bool treasure; // Indicates if the cell contains a treasure
 };
 
 #endif // CELL_H

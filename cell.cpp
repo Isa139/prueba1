@@ -1,6 +1,6 @@
 #include "Cell.h"
 
-Cell::Cell(int x, int y) : x(x), y(y), visited(false) {
+Cell::Cell(int x, int y) : x(x), y(y), visited(false), treasure(false) {
     walls[0] = walls[1] = walls[2] = walls[3] = true;
     up = down = left = right = nullptr;
 }
@@ -19,6 +19,14 @@ void Cell::visit() {
 
 bool Cell::isVisited() const {
     return visited;
+}
+
+void Cell::placeTreasure() {
+    treasure = true;
+}
+
+bool Cell::hasTreasure() const {
+    return treasure;
 }
 
 int Cell::getX() const {

@@ -6,6 +6,8 @@
 #include <queue>
 #include <vector>
 
+#define USE_DFS  // Cambia a #define USE_BFS para usar BFS
+
 class MazeGenerator {
 public:
     MazeGenerator(int rows, int cols);

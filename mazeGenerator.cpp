@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <random>
+#include <stack>
+#include <vector>
 #include <stdexcept>
 
 MazeGenerator::MazeGenerator(int rows, int cols) : rows(rows), cols(cols) {
@@ -9,7 +12,7 @@ MazeGenerator::MazeGenerator(int rows, int cols) : rows(rows), cols(cols) {
     for (int i = 0; i < rows; ++i) {
         maze[i] = new Cell[cols];
         for (int j = 0; j < cols; ++j) {
-            maze[i][j] = Cell(j, i); // Asigna las coordenadas correctas
+            maze[i][j] = Cell(j, i); // Assign correct coordinates
         }
     }
     createMaze();
@@ -38,8 +41,11 @@ void MazeGenerator::createMaze() {
             if (j < cols - 1) maze[i][j].right = &maze[i][j + 1];
         }
     }
-
+#ifdef USE_DFS
     generateMazeDFS();
+#elif defined(USE_BFS)
+    generateMazeBFS();
+#endif
 }
 
 void MazeGenerator::generateMazeDFS() {
@@ -49,13 +55,15 @@ void MazeGenerator::generateMazeDFS() {
     stack.push(startCell);
 
     std::srand(std::time(nullptr));
+    std::random_device rd;
+    std::mt19937 g(rd());
 
     while (!stack.empty()) {
         Cell* current = stack.top();
         stack.pop();
 
         std::vector<int> directions = {0, 1, 2, 3};
-        std::random_shuffle(directions.begin(), directions.end());
+        std::shuffle(directions.begin(), directions.end(), g);
 
         for (int direction : directions) {
             Cell* next = getNeighbor(current, direction);
@@ -69,6 +77,34 @@ void MazeGenerator::generateMazeDFS() {
         }
     }
 }
+
+// BFS
+void MazeGenerator::generateMazeBFS() {
+    std::queue<Cell*> queue;
+    Cell* startCell = &maze[0][0];
+    startCell->visit();
+    queue.push(startCell);
+
+    std::srand(std::time(nullptr));
+
+    while (!queue.empty()) {
+        Cell* current = queue.front();
+        queue.pop();
+
+        std::vector<int> directions = {0, 1, 2, 3};
+        std::shuffle(directions.begin(), directions.end(), std::default_random_engine(std::rand()));
+
+        for (int direction : directions) {
+            Cell* next = getNeighbor(current, direction);
+            if (next && !next->isVisited()) {
+                next->visit();
+                removeWalls(current, next);
+                queue.push(next);
+            }
+        }
+    }
+}
+
 
 void MazeGenerator::removeWalls(Cell* current, Cell* next) {
     if (current->up == next) {

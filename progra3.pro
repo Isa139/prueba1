@@ -9,17 +9,21 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    cell.cpp \
+    game.cpp \
     main.cpp \
     mainwindow.cpp \
     mazeGenerator.cpp \
     mazewidget.cpp \
-    node.cpp
+    player.cpp
 
 HEADERS += \
+    cell.h \
+    game.h \
     mainwindow.h \
     mazeGenerator.h \
     mazewidget.h \
-    node.h
+    player.h
 
 FORMS += \
     mainwindow.ui
