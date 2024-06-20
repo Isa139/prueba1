@@ -11,6 +11,7 @@ public:
     void nextTurn();
     Player* getCurrentPlayer();
     bool checkTreasureFound() const;
+    void switchTurn();
 
 private:
     Player* player1;

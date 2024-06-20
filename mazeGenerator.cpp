@@ -1,4 +1,5 @@
 #include "MazeGenerator.h"
+#include "Cell.h"
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
@@ -7,12 +8,16 @@
 #include <vector>
 #include <stdexcept>
 
+// Constants for power and portal spawn rates
+#define POWER_SPAWN_RATE 0.05 // 5% chance to spawn a power in each cell
+#define PORTAL_SPAWN_RATE 0.02 // 2% chance to spawn a portal in each cell
+
 MazeGenerator::MazeGenerator(int rows, int cols) : rows(rows), cols(cols) {
     maze = new Cell*[rows];
     for (int i = 0; i < rows; ++i) {
         maze[i] = new Cell[cols];
         for (int j = 0; j < cols; ++j) {
-            maze[i][j] = Cell(j, i); // Assign correct coordinates
+            maze[i][j] = Cell(j, i); // Asignar coordenadas correctas
         }
     }
     createMaze();
@@ -33,14 +38,49 @@ Cell* MazeGenerator::getNode(int row, int col) const {
 }
 
 void MazeGenerator::createMaze() {
+    // Connect each cell with its neighbors
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            if (i > 0) maze[i][j].up = &maze[i - 1][j];
-            if (i < rows - 1) maze[i][j].down = &maze[i + 1][j];
-            if (j > 0) maze[i][j].left = &maze[i][j - 1];
-            if (j < cols - 1) maze[i][j].right = &maze[i][j + 1];
+            if (i > 0) maze[i][j].setUp(&maze[i - 1][j]);
+            if (i < rows - 1) maze[i][j].setDown(&maze[i + 1][j]);
+            if (j > 0) maze[i][j].setLeft(&maze[i][j - 1]);
+            if (j < cols - 1) maze[i][j].setRight(&maze[i][j + 1]);
         }
     }
+
+    // Initialize random number generator
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    // Place powers randomly in the maze based on POWER_SPAWN_RATE
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (static_cast<double>(std::rand()) / RAND_MAX < POWER_SPAWN_RATE) {
+                Cell::Power power = static_cast<Cell::Power>(std::rand() % 3 + 1); // Adjust range for new powers
+                maze[i][j].placePower(power);
+            }
+        }
+    }
+
+    // Place portals randomly in the maze based on PORTAL_SPAWN_RATE
+    std::vector<Cell*> portalCandidates;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (static_cast<double>(std::rand()) / RAND_MAX < PORTAL_SPAWN_RATE) {
+                portalCandidates.push_back(&maze[i][j]);
+            }
+        }
+    }
+
+    // Shuffle portal candidates to randomize portal connections
+    std::shuffle(portalCandidates.begin(), portalCandidates.end(), std::mt19937(std::random_device()()));
+
+    // Pair up portal candidates and establish bidirectional portals
+    for (size_t i = 0; i + 1 < portalCandidates.size(); i += 2) {
+        portalCandidates[i]->placePortal(portalCandidates[i + 1]);
+        portalCandidates[i + 1]->placePortal(portalCandidates[i]);
+    }
+
+// Use selected maze generation algorithm (DFS or BFS based on compile-time flag)
 #ifdef USE_DFS
     generateMazeDFS();
 #elif defined(USE_BFS)
@@ -78,7 +118,6 @@ void MazeGenerator::generateMazeDFS() {
     }
 }
 
-// BFS
 void MazeGenerator::generateMazeBFS() {
     std::queue<Cell*> queue;
     Cell* startCell = &maze[0][0];
@@ -105,18 +144,17 @@ void MazeGenerator::generateMazeBFS() {
     }
 }
 
-
 void MazeGenerator::removeWalls(Cell* current, Cell* next) {
-    if (current->up == next) {
+    if (current->getUp() == next) {
         current->removeWall(0);
         next->removeWall(2);
-    } else if (current->down == next) {
+    } else if (current->getDown() == next) {
         current->removeWall(2);
         next->removeWall(0);
-    } else if (current->left == next) {
+    } else if (current->getLeft() == next) {
         current->removeWall(3);
         next->removeWall(1);
-    } else if (current->right == next) {
+    } else if (current->getRight() == next) {
         current->removeWall(1);
         next->removeWall(3);
     }
@@ -124,10 +162,10 @@ void MazeGenerator::removeWalls(Cell* current, Cell* next) {
 
 Cell* MazeGenerator::getNeighbor(Cell* cell, int direction) const {
     switch (direction) {
-    case 0: return cell->up;
-    case 1: return cell->right;
-    case 2: return cell->down;
-    case 3: return cell->left;
+    case 0: return cell->getUp();
+    case 1: return cell->getRight();
+    case 2: return cell->getDown();
+    case 3: return cell->getLeft();
     default: return nullptr;
     }
 }

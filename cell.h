@@ -3,29 +3,61 @@
 
 class Cell {
 public:
-    Cell(int x = 0, int y = 0);
+    enum Power {
+        None = 0,
+        JumpWalls,
+        ControlOtherPlayer,
+        DoubleTurn
+    };
+    Cell();
+    Cell(int x, int y);
 
     bool hasWall(int direction) const;
     void removeWall(int direction);
+
     void visit();
     bool isVisited() const;
 
     void placeTreasure();
     bool hasTreasure() const;
 
+    int getX() const;
+    int getY() const;
+
+    void placePower(Power power);
+    Power getPower() const;
+
+    Cell* getUp() const;
+    Cell* getDown() const;
+    Cell* getLeft() const;
+    Cell* getRight() const;
+
+    void setUp(Cell* up);
+    void setDown(Cell* down);
+    void setLeft(Cell* left);
+    void setRight(Cell* right);
+
+    void placePortal(Cell* destination);
+    Cell* getPortalDestination() const;
+    bool hasPortal() const;
+    void usePortal();
+    bool isPortalUsed() const;
+    void removePower(); // Add this method
+
+private:
+    int x, y;
+    bool visited;
+    bool walls[4]; // { up, right, down, left }
+    bool treasure;
+    Power power;
+
     Cell* up;
     Cell* down;
     Cell* left;
     Cell* right;
 
-    int getX() const;
-    int getY() const;
-
-private:
-    int x, y;
-    bool visited;
-    bool walls[4]; // Top, Right, Bottom, Left
-    bool treasure; // Indicates if the cell contains a treasure
+    Cell* portalDestination;
+    bool portalUsed;
 };
 
 #endif // CELL_H
