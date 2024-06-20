@@ -1,28 +1,28 @@
-#include "Player.h"
+#include "player.h"
 
-Player::Player(Cell* startCell, int id) : currentCell(startCell), id(id) {}
+Player::Player(Cell* startCell, int id) : currentCell(startCell), playerId(id), winner(false), jumpWalls(false) {}
 
 void Player::moveUp() {
-    if (currentCell->up && !currentCell->hasWall(0)) {
-        currentCell = currentCell->up;
+    if (currentCell->getUp()) {
+        currentCell = currentCell->getUp();
     }
 }
 
 void Player::moveDown() {
-    if (currentCell->down && !currentCell->hasWall(2)) {
-        currentCell = currentCell->down;
+    if (currentCell->getDown()) {
+        currentCell = currentCell->getDown();
     }
 }
 
 void Player::moveLeft() {
-    if (currentCell->left && !currentCell->hasWall(3)) {
-        currentCell = currentCell->left;
+    if (currentCell->getLeft()) {
+        currentCell = currentCell->getLeft();
     }
 }
 
 void Player::moveRight() {
-    if (currentCell->right && !currentCell->hasWall(1)) {
-        currentCell = currentCell->right;
+    if (currentCell->getRight()) {
+        currentCell = currentCell->getRight();
     }
 }
 
@@ -31,5 +31,37 @@ Cell* Player::getCurrentCell() const {
 }
 
 int Player::getId() const {
-    return id;
+    return playerId;
+}
+
+bool Player::isWinner() const {
+    return winner;
+}
+
+void Player::setWinner(bool isWinner) {
+    winner = isWinner;
+}
+
+void Player::collectPower(Cell::Power power) {
+    switch (power) {
+    case Cell::JumpWalls:
+        jumpWalls = true;
+        break;
+    case Cell::ControlOtherPlayer:
+        // Implement ControlOtherPlayer logic
+        break;
+    case Cell::DoubleTurn:
+        // Implement DoubleTurn logic
+        break;
+    default:
+        break;
+    }
+}
+
+bool Player::canJumpWalls() const {
+    return jumpWalls;
+}
+
+void Player::setCurrentCell(Cell* cell) {
+    currentCell = cell;
 }

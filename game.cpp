@@ -14,3 +14,8 @@ Player* Game::getCurrentPlayer() {
 bool Game::checkTreasureFound() const {
     return currentPlayer->getCurrentCell() == treasureCell;
 }
+
+void Game::switchTurn() {
+    currentPlayer = (currentPlayer == player1) ? player2 : player1;
+}
+

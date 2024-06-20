@@ -7,6 +7,7 @@
 #include <vector>
 
 #define USE_DFS  // Cambia a #define USE_BFS para usar BFS
+#define EXTRA_EDGE_PROB 0.1  // Probabilidad de eliminar una arista aleatoria
 
 class MazeGenerator {
 public:
@@ -23,6 +24,7 @@ private:
     void generateMazeBFS();
     void removeWalls(Cell* current, Cell* next);
     Cell* getNeighbor(Cell* cell, int direction) const;
+    void removeRandomEdge();
 
     int rows;
     int cols;
