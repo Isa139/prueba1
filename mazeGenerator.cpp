@@ -1,4 +1,5 @@
 #include "MazeGenerator.h"
+#include "constants.h"
 #include "Cell.h"
 #include <algorithm>
 #include <cstdlib>
@@ -8,9 +9,6 @@
 #include <vector>
 #include <stdexcept>
 
-// Constants for power and portal spawn rates
-#define POWER_SPAWN_RATE 0.05 // 5% chance to spawn a power in each cell
-#define PORTAL_SPAWN_RATE 0.02 // 2% chance to spawn a portal in each cell
 
 MazeGenerator::MazeGenerator(int rows, int cols) : rows(rows), cols(cols) {
     maze = new Cell*[rows];
