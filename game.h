@@ -8,16 +8,26 @@ class Game {
 public:
     Game(Player* player1, Player* player2, Cell* treasureCell);
 
+    Player* getCurrentPlayer() const;
+    Player* getOtherPlayer() const;
     void nextTurn();
-    Player* getCurrentPlayer();
+
     bool checkTreasureFound() const;
-    void switchTurn();
+
+    bool isExtraTurn() const;
+    void setExtraTurn(bool value);
+
+    bool isControlEnemy() const;
+    void setControlEnemy(bool value);
 
 private:
     Player* player1;
     Player* player2;
-    Player* currentPlayer;
     Cell* treasureCell;
+    Player* currentPlayer;
+    bool extraTurn;
+    bool controlEnemy;
+    bool tempControl;
 };
 
 #endif // GAME_H

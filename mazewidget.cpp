@@ -1,3 +1,4 @@
+// MazeWidget.cpp
 #include "MazeWidget.h"
 #include <QPainter>
 #include <QKeyEvent>
@@ -5,12 +6,7 @@
 #include <ctime>
 #include <iostream>
 #include <QMessageBox>
-
-#define CELL_SIZE 30
-#define ROWS 9
-#define COLS 9
-#define MAX_WINDOW_WIDTH 800
-#define MAX_WINDOW_HEIGHT 600
+#include "constants.h"
 
 MazeWidget::MazeWidget(QWidget *parent)
     : QWidget(parent), mazeGenerator(ROWS, COLS),
@@ -29,7 +25,7 @@ MazeWidget::MazeWidget(QWidget *parent)
         throw std::invalid_argument("Error de Render: Tamaño del laberinto excede el tamaño máximo de la ventana.");
     }
 
-    setFixedSize(totalWidth, totalHeight); // Corrected this line to set both width and height
+    setFixedSize(totalWidth, totalHeight);
     placeTreasure();
 }
 
@@ -117,44 +113,36 @@ void MazeWidget::drawPowers(QPainter &painter) {
                 int y = cell->getY() * CELL_SIZE + CELL_SIZE / 4;
                 painter.setBrush(QBrush(color));
                 painter.drawEllipse(x, y, CELL_SIZE / 2, CELL_SIZE / 2);
-                painter.setBrush(Qt::NoBrush); // Reset brush
+                painter.drawText(x, y, CELL_SIZE / 2, CELL_SIZE / 2, Qt::AlignCenter, QString::number(static_cast<int>(power)));
             }
         }
     }
 }
 
 void MazeWidget::drawPortals(QPainter &painter) {
+    painter.setBrush(QBrush(Qt::magenta));
     for (int i = 0; i < ROWS; ++i) {
         for (int j = 0; j < COLS; ++j) {
             Cell* cell = mazeGenerator.getNode(i, j);
             if (cell->hasPortal()) {
-                int x = cell->getX() * CELL_SIZE + CELL_SIZE / 4;
-                int y = cell->getY() * CELL_SIZE + CELL_SIZE / 4;
-                painter.setBrush(QBrush(Qt::magenta));
-                painter.drawRect(x, y, CELL_SIZE / 2, CELL_SIZE / 2);
-                painter.setBrush(Qt::NoBrush); // Reset brush
+                int cx = cell->getX() * CELL_SIZE + CELL_SIZE / 2;
+                int cy = cell->getY() * CELL_SIZE + CELL_SIZE / 2;
+                QPolygon diamond;
+                diamond << QPoint(cx, cy - CELL_SIZE / 4)
+                        << QPoint(cx + CELL_SIZE / 4, cy)
+                        << QPoint(cx, cy + CELL_SIZE / 4)
+                        << QPoint(cx - CELL_SIZE / 4, cy);
+                painter.drawPolygon(diamond);
             }
         }
     }
 }
 
 void MazeWidget::drawPlayer(QPainter &painter, const Player &player, QColor color) {
-    Cell* cell = player.getCurrentCell();
-    int x = cell->getX() * CELL_SIZE;
-    int y = cell->getY() * CELL_SIZE;
-
+    int x = player.getCurrentCell()->getX() * CELL_SIZE + CELL_SIZE / 4;
+    int y = player.getCurrentCell()->getY() * CELL_SIZE + CELL_SIZE / 4;
     painter.setBrush(QBrush(color));
-    painter.drawRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
-}
-
-void MazeWidget::drawCurrentPlayer(QPainter &painter) {
-    Player* currentPlayer = game.getCurrentPlayer();
-    Cell* cell = currentPlayer->getCurrentCell();
-    int x = cell->getX() * CELL_SIZE;
-    int y = cell->getY() * CELL_SIZE;
-
-    painter.setPen(QPen(Qt::black, 3));
-    painter.drawRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+    painter.drawRect(x, y, CELL_SIZE / 2, CELL_SIZE / 2);
 }
 
 void MazeWidget::drawTreasure(QPainter &painter) {
@@ -168,11 +156,25 @@ void MazeWidget::drawTreasure(QPainter &painter) {
 
 void MazeWidget::keyPressEvent(QKeyEvent *event) {
     int key = event->key();
-    play(key);
-    update();
+    Player* currentPlayer = game.getCurrentPlayer();
+
+    if ((currentPlayer == &player1 && (key == Qt::Key_W || key == Qt::Key_A || key == Qt::Key_S || key == Qt::Key_D)) ||
+        (currentPlayer == &player2 && (key == Qt::Key_Up || key == Qt::Key_Left || key == Qt::Key_Down || key == Qt::Key_Right))) {
+        play(key);
+        update();
+    }
 }
 
-bool MazeWidget::updatePlayerPosition(Player* player, int key) {
+
+void MazeWidget::drawCurrentPlayer(QPainter &painter) {
+    Player* currentPlayer = game.getCurrentPlayer();
+    QString playerName = (currentPlayer == &player1) ? "Player 1" : "Player 2";
+    painter.setPen(Qt::white);
+    painter.setFont(QFont("Arial", 16));
+    painter.drawText(rect(), Qt::AlignTop | Qt::AlignHCenter, "Turn: " + playerName);
+}
+
+bool MazeWidget::updatePlayerPosition(Player *player, int key) {
     Cell* currentCell = player->getCurrentCell();
     Cell* nextCell = nullptr;
 
@@ -182,6 +184,9 @@ bool MazeWidget::updatePlayerPosition(Player* player, int key) {
         if (currentCell->getUp() && (!currentCell->hasWall(0) || player->canJumpWalls())) {
             nextCell = currentCell->getUp();
             player->moveUp();
+            if (player->canJumpWalls() && currentCell->hasWall(0)) {
+                player->consumeJumpWalls();
+            }
         }
         break;
     case Qt::Key_S:
@@ -189,6 +194,9 @@ bool MazeWidget::updatePlayerPosition(Player* player, int key) {
         if (currentCell->getDown() && (!currentCell->hasWall(2) || player->canJumpWalls())) {
             nextCell = currentCell->getDown();
             player->moveDown();
+            if (player->canJumpWalls() && currentCell->hasWall(2)) {
+                player->consumeJumpWalls();
+            }
         }
         break;
     case Qt::Key_A:
@@ -196,6 +204,9 @@ bool MazeWidget::updatePlayerPosition(Player* player, int key) {
         if (currentCell->getLeft() && (!currentCell->hasWall(3) || player->canJumpWalls())) {
             nextCell = currentCell->getLeft();
             player->moveLeft();
+            if (player->canJumpWalls() && currentCell->hasWall(3)) {
+                player->consumeJumpWalls();
+            }
         }
         break;
     case Qt::Key_D:
@@ -203,40 +214,105 @@ bool MazeWidget::updatePlayerPosition(Player* player, int key) {
         if (currentCell->getRight() && (!currentCell->hasWall(1) || player->canJumpWalls())) {
             nextCell = currentCell->getRight();
             player->moveRight();
+            if (player->canJumpWalls() && currentCell->hasWall(1)) {
+                player->consumeJumpWalls();
+            }
         }
         break;
     }
 
     if (nextCell) {
+        // Check for power in the next cell
+        Cell::Power power = nextCell->getPower();
+        if (power != Cell::None) {
+            handlePower(player, nextCell, power);
+        }
+
+        // Handle portal movement
         if (nextCell->hasPortal()) {
-            int targetX = rand() % COLS;
-            int targetY = rand() % ROWS;
-            Cell* portalTarget = mazeGenerator.getNode(targetY, targetX);
-            player->setCurrentCell(portalTarget);
+            Cell* portalDestination = nextCell->getPortalDestination();
+            nextCell->usePortal();
+            if (portalDestination) {
+                portalDestination->usePortal();
+                nextCell = portalDestination;
+                player->setCurrentCell(nextCell);
+            }
         } else {
             player->setCurrentCell(nextCell);
         }
 
-        Cell::Power power = nextCell->getPower();
-        if (power != Cell::None) {
-            player->collectPower(power);
-            nextCell->removePower();
-        }
-
-        if (nextCell == treasureCell) {
-            player->setWinner(true);
-            QMessageBox::information(this, "Game Over", QString("Player %1 wins!").arg(player->getId()));
-        }
-
-        return true;
+        return true; // Move was successful
     }
 
-    return false;
+    return false; // Move was not possible
+}
+
+void MazeWidget::handlePower(Player *player, Cell *cell, Cell::Power power) {
+    switch (power) {
+    case Cell::JumpWalls:
+        QMessageBox::information(this, "Power Activated", "You can now jump over walls!");
+        player->setCanJumpWalls(true);
+        break;
+    case Cell::ControlOtherPlayer:
+        QMessageBox::information(this, "Power Activated", "You can now control another player!");
+        player->setControlOtherPlayer(true);
+        break;
+    case Cell::DoubleTurn:
+        QMessageBox::information(this, "Power Activated", "You get an extra turn!");
+        player->setDoubleTurn(true);
+        break;
+    default:
+        break;
+    }
+
+    // Clear the power from the cell after it's been used
+    clearPower(cell);
 }
 
 void MazeWidget::play(int key) {
     Player* currentPlayer = game.getCurrentPlayer();
+
+    // Attempt to update player position based on key input
     if (updatePlayerPosition(currentPlayer, key)) {
-        game.switchTurn();
+        // Check if the player has found the treasure
+        if (game.checkTreasureFound()) {
+            QString message = QString("Player %1 has found the treasure!").arg(currentPlayer->getId());
+            QMessageBox msgBox;
+            msgBox.setText(message);
+            msgBox.setInformativeText("Do you want to end the game or restart?");
+            msgBox.setStandardButtons(QMessageBox::Close | QMessageBox::Retry);
+            msgBox.setDefaultButton(QMessageBox::Retry);
+            int ret = msgBox.exec();
+
+            switch (ret) {
+            case QMessageBox::Close:
+                // End the game
+                close();
+                break;
+            case QMessageBox::Retry:
+                // Restart the game
+                placeTreasure();
+                player1.setCurrentCell(mazeGenerator.getNode(0, 0));
+                player2.setCurrentCell(mazeGenerator.getNode(0, COLS - 1));
+                update();
+                break;
+            default:
+                // should never be reached
+                break;
+            }
+        }
+
+        // Proceed to the next turn if no extra turn or control enemy is set
+        if (currentPlayer->hasDoubleTurn()) {
+            currentPlayer->useDoubleTurn(); // Consume el doble turno
+        } else {
+            game.nextTurn();
+        }
+
+        update();
     }
+}
+
+void MazeWidget::clearPower(Cell* cell) {
+    cell->placePower(Cell::None);
 }

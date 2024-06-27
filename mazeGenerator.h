@@ -5,9 +5,7 @@
 #include <stack>
 #include <queue>
 #include <vector>
-
-#define USE_DFS  // Cambia a #define USE_BFS para usar BFS
-#define EXTRA_EDGE_PROB 0.1  // Probabilidad de eliminar una arista aleatoria
+#include "constants.h"
 
 class MazeGenerator {
 public:

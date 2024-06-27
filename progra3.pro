@@ -19,6 +19,7 @@ SOURCES += \
 
 HEADERS += \
     cell.h \
+    constants.h \
     game.h \
     mainwindow.h \
     mazeGenerator.h \

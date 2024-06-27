@@ -42,7 +42,6 @@ public:
     bool hasPortal() const;
     void usePortal();
     bool isPortalUsed() const;
-    void removePower(); // Add this method
 
 private:
     int x, y;
