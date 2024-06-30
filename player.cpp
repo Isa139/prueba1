@@ -1,33 +1,43 @@
 #include "Player.h"
+#include "constants.h"
 
+//player constructor
 Player::Player(Cell* startCell, int id)
     : currentCell(startCell), id(id), jumpWalls(false), jumpWallsActive(false), controlOtherPlayer(false), doubleTurn(false) {}
 
 void Player::moveUp() {
-    if (currentCell->getUp() && (!currentCell->hasWall(0) || jumpWallsActive)) {
+    if (currentCell->getUp() && (!currentCell->hasWall(UP) || jumpWallsActive)) {
+        if (currentCell->hasWall(UP) && jumpWallsActive) {
+            consumeJumpWalls();
+        }
         currentCell = currentCell->getUp();
-        if (jumpWallsActive && currentCell->hasWall(0)) consumeJumpWalls(); // Desactiva el poder después de usarlo
     }
 }
 
 void Player::moveDown() {
-    if (currentCell->getDown() && (!currentCell->hasWall(2) || jumpWallsActive)) {
+    if (currentCell->getDown() && (!currentCell->hasWall(DOWN) || jumpWallsActive)) {
+        if (currentCell->hasWall(DOWN) && jumpWallsActive) {
+            consumeJumpWalls();
+        }
         currentCell = currentCell->getDown();
-        if (jumpWallsActive && currentCell->hasWall(2)) consumeJumpWalls(); // Desactiva el poder después de usarlo
     }
 }
 
 void Player::moveLeft() {
-    if (currentCell->getLeft() && (!currentCell->hasWall(3) || jumpWallsActive)) {
+    if (currentCell->getLeft() && (!currentCell->hasWall(LEFT) || jumpWallsActive)) {
+        if (currentCell->hasWall(LEFT) && jumpWallsActive) {
+            consumeJumpWalls();
+        }
         currentCell = currentCell->getLeft();
-        if (jumpWallsActive && currentCell->hasWall(3)) consumeJumpWalls(); // Desactiva el poder después de usarlo
     }
 }
 
 void Player::moveRight() {
-    if (currentCell->getRight() && (!currentCell->hasWall(1) || jumpWallsActive)) {
+    if (currentCell->getRight() && (!currentCell->hasWall(RIGHT) || jumpWallsActive)) {
+        if (currentCell->hasWall(RIGHT) && jumpWallsActive) {
+            consumeJumpWalls();
+        }
         currentCell = currentCell->getRight();
-        if (jumpWallsActive && currentCell->hasWall(1)) consumeJumpWalls(); // Desactiva el poder después de usarlo
     }
 }
 
@@ -44,11 +54,19 @@ int Player::getId() const {
 }
 
 int Player::getX() const {
-    return currentCell ? currentCell->getX() : -1;
+    if (currentCell) {
+        return currentCell->getX();
+    } else {
+        return -1;
+    }
 }
 
 int Player::getY() const {
-    return currentCell ? currentCell->getY() : -1;
+    if (currentCell) {
+        return currentCell->getY();
+    } else {
+        return -1;
+    }
 }
 
 bool Player::canJumpWalls() const {

@@ -10,17 +10,19 @@
 #include <stdexcept>
 
 
+//maze constructor
 MazeGenerator::MazeGenerator(int rows, int cols) : rows(rows), cols(cols) {
     maze = new Cell*[rows];
     for (int i = 0; i < rows; ++i) {
         maze[i] = new Cell[cols];
         for (int j = 0; j < cols; ++j) {
-            maze[i][j] = Cell(j, i); // Asignar coordenadas correctas
+            maze[i][j] = Cell(j, i);
         }
     }
     createMaze();
 }
 
+//maze destructor
 MazeGenerator::~MazeGenerator() {
     for (int i = 0; i < rows; ++i) {
         delete[] maze[i];
@@ -36,7 +38,6 @@ Cell* MazeGenerator::getNode(int row, int col) const {
 }
 
 void MazeGenerator::createMaze() {
-    // Connect each cell with its neighbors
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             if (i > 0) maze[i][j].setUp(&maze[i - 1][j]);
@@ -46,39 +47,58 @@ void MazeGenerator::createMaze() {
         }
     }
 
-    // Initialize random number generator
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    // Place powers randomly in the maze based on POWER_SPAWN_RATE
+
+    const int MAX_CELLS = ROWS * COLS;
+    Cell* portalCandidates[MAX_CELLS];
+    int candidateCount = 0;
+
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            if (static_cast<double>(std::rand()) / RAND_MAX < POWER_SPAWN_RATE) {
-                Cell::Power power = static_cast<Cell::Power>(std::rand() % 3 + 1); // Adjust range for new powers
-                maze[i][j].placePower(power);
+            if ((i!=0 && j!=0)||(i!=0 && j!=cols-1)) {
+                if (static_cast<double>(std::rand()) / RAND_MAX < PORTAL_SPAWN_RATE) {
+                    if (candidateCount < MAX_CELLS) {
+                        portalCandidates[candidateCount++] = &maze[i][j];
+                    }
+                }
             }
+        }
+        if (candidateCount >= MAX_CELLS) {
+            break;
         }
     }
 
-    // Place portals randomly in the maze based on PORTAL_SPAWN_RATE
-    std::vector<Cell*> portalCandidates;
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            if (static_cast<double>(std::rand()) / RAND_MAX < PORTAL_SPAWN_RATE) {
-                portalCandidates.push_back(&maze[i][j]);
-            }
-        }
+
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+
+    for (int i = candidateCount - 1; i > 0; --i) {
+        int j = std::rand() % (i + 1);
+        std::swap(portalCandidates[i], portalCandidates[j]);
     }
 
-    // Shuffle portal candidates to randomize portal connections
-    std::shuffle(portalCandidates.begin(), portalCandidates.end(), std::mt19937(std::random_device()()));
 
-    // Pair up portal candidates and establish bidirectional portals
-    for (size_t i = 0; i + 1 < portalCandidates.size(); i += 2) {
+    for (int i = 0; i + 1 < candidateCount; i += 2) {
         portalCandidates[i]->placePortal(portalCandidates[i + 1]);
         portalCandidates[i + 1]->placePortal(portalCandidates[i]);
     }
 
-// Use selected maze generation algorithm (DFS or BFS based on compile-time flag)
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            Cell* cell = getNode(i, j);
+
+            if ((i!=0 && j!=0)||(i!=0 && j!=cols-1)) {
+                if (!(cell->hasPortal())) {
+                    if (static_cast<double>(std::rand()) / RAND_MAX < POWER_SPAWN_RATE) {
+                        Cell::Power power = static_cast<Cell::Power>(std::rand() % POWER_TYPES + 1);
+                        maze[i][j].placePower(power);
+                    }
+                }
+            }
+        }
+    }
+
 #ifdef USE_DFS
     generateMazeDFS();
 #elif defined(USE_BFS)
@@ -143,27 +163,33 @@ void MazeGenerator::generateMazeBFS() {
 }
 
 void MazeGenerator::removeWalls(Cell* current, Cell* next) {
+    //double wall removal
     if (current->getUp() == next) {
-        current->removeWall(0);
-        next->removeWall(2);
+        current->removeWall(UP);
+        next->removeWall(DOWN);
     } else if (current->getDown() == next) {
-        current->removeWall(2);
-        next->removeWall(0);
+        current->removeWall(DOWN);
+        next->removeWall(UP);
     } else if (current->getLeft() == next) {
-        current->removeWall(3);
-        next->removeWall(1);
+        current->removeWall(LEFT);
+        next->removeWall(RIGHT);
     } else if (current->getRight() == next) {
-        current->removeWall(1);
-        next->removeWall(3);
+        current->removeWall(RIGHT);
+        next->removeWall(LEFT);
     }
 }
 
 Cell* MazeGenerator::getNeighbor(Cell* cell, int direction) const {
-    switch (direction) {
-    case 0: return cell->getUp();
-    case 1: return cell->getRight();
-    case 2: return cell->getDown();
-    case 3: return cell->getLeft();
-    default: return nullptr;
+    if (direction == 0) {
+        return cell->getUp();
+    } else if (direction == 1) {
+        return cell->getRight();
+    } else if (direction == 2) {
+        return cell->getDown();
+    } else if (direction == 3) {
+        return cell->getLeft();
+    } else {
+        return nullptr;
     }
+
 }

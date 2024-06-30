@@ -21,8 +21,8 @@ public:
 
     bool canJumpWalls() const;
     void setCanJumpWalls(bool value);
-    void activateJumpWalls(); // Método para activar el poder de saltar muros
-    void consumeJumpWalls(); // Método para consumir el poder de saltar muros después de usarlo
+    void activateJumpWalls();
+    void consumeJumpWalls();
 
     bool canControlOtherPlayer() const;
     void setControlOtherPlayer(bool value);
@@ -36,10 +36,9 @@ private:
     Cell* currentCell;
     int id;
     bool jumpWalls;
-    bool jumpWallsActive; // Estado para saber si el poder está activo
+    bool jumpWallsActive;
     bool controlOtherPlayer;
     bool doubleTurn;
 };
 
 #endif // PLAYER_H
-

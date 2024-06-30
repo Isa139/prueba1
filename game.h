@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#pragma once
 #include "Player.h"
 #include "Cell.h"
 
@@ -10,8 +11,8 @@ public:
 
     Player* getCurrentPlayer() const;
     Player* getOtherPlayer() const;
-    void nextTurn();
 
+    void nextTurn();
     bool checkTreasureFound() const;
 
     bool isExtraTurn() const;
