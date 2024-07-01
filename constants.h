@@ -1,8 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define USE_DFS
-#define EXTRA_EDGE_PROB 0.1
+#define USE_DFS  // USE_BFS o USE_DFS
+#define REMOVE_EDGE_PROB 0.1
 #define POWER_SPAWN_RATE 0.25
 #define PORTAL_SPAWN_RATE 0.1
 #define CELL_SIZE 30

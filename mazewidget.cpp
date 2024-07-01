@@ -6,8 +6,6 @@
 #include <iostream>
 #include <QMessageBox>
 #include "constants.h"
-//def
-
 
 //constructor
 MazeWidget::MazeWidget(QWidget *parent)
@@ -32,22 +30,31 @@ MazeWidget::MazeWidget(QWidget *parent)
     placeTreasure();
 }
 
-
 void MazeWidget::placeTreasure() {
-    srand(static_cast<unsigned int>(time(nullptr))); //seed
+    srand(static_cast<unsigned int>(time(nullptr))); // Seed
 
-    int treasureX;
-    int treasureY;
+    int treasureX = -1;
+    int treasureY = -1;
+    bool found = false;
 
-    while ((treasureX == 0 && treasureY == 0) || (treasureX == COLS - 1 && treasureY == 0) || !isStrategicPosition(treasureX, treasureY)){
+    while (!found) {
         treasureX = rand() % COLS;
         treasureY = rand() % ROWS;
+
+        Cell* potentialCell = mazeGenerator.getNode(treasureY, treasureX);
+
+        if (isStrategicPosition(treasureX, treasureY) &&
+            !(treasureX == 0 && treasureY == 0) &&
+            !(treasureX == COLS - 1 && treasureY == 0) &&
+            !potentialCell->hasPortal() &&
+            !potentialCell->getPower()) {
+            found = true;
+        }
     }
 
     treasureCell = mazeGenerator.getNode(treasureY, treasureX);
     treasureCell->placeTreasure();
-
-    game = Game(&player1, &player2, treasureCell); //initializes game object, to start game
+    game = Game(&player1, &player2, treasureCell);
 }
 
 bool MazeWidget::isStrategicPosition(int x, int y) {
