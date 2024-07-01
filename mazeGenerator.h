@@ -16,10 +16,14 @@ public:
     Cell* getNode(int row, int col) const;
     int getRows() const { return rows; }
     int getCols() const { return cols; }
+    void generateMazeDFS();
+    void generateMazeBFS(int startRow, int startCol);
+
 
 private:
-    void generateMazeDFS();
-    void generateMazeBFS();
+    void connectCells();
+    void placePortals();
+    void placePowers();
     void removeWalls(Cell* current, Cell* next);
     Cell* getNeighbor(Cell* cell, int direction) const;
     void removeRandomEdge();
